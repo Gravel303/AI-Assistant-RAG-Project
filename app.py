@@ -1,26 +1,48 @@
 import streamlit as st
-import os
 
-from dotenv import load_dotenv
-from google import genai
+from utils.gemini_client import ask_gemini
 
-load_dotenv()
-
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+st.set_page_config(
+    page_title="AI Study Assistant",
+    page_icon="📚"
 )
 
-st.title("AI Study Assistant")
+st.title("📚 AI Study Assistant")
 
-question = st.text_input(
-    "Ask a question:"
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+
+question = st.chat_input(
+    "Ask a study question..."
 )
 
-if st.button("Generate Answer"):
+if question:
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=question
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": question
+        }
     )
 
-    st.write(response.text)
+    with st.chat_message("user"):
+        st.markdown(question)
+
+    with st.spinner("Thinking..."):
+        answer = ask_gemini(question)
+
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": answer
+        }
+    )
+
+    with st.chat_message("assistant"):
+        st.markdown(answer)
