@@ -2,12 +2,36 @@ import streamlit as st
 
 from utils.gemini_client import ask_gemini
 
+from utils.pdf_processor import extract_text_from_pdf
+
 st.set_page_config(
     page_title="AI Study Assistant",
     page_icon="📚"
 )
 
 st.title("📚 AI Study Assistant")
+
+uploaded_file = st.file_uploader(
+    "Upload a PDF",
+    type="pdf"
+)
+
+if uploaded_file:
+
+    pdf_text = extract_text_from_pdf(
+        uploaded_file
+    )
+
+
+    st.success("PDF loaded!")
+
+    st.text_area(
+    "PDF Preview",
+    pdf_text[:3000],
+    height=300
+)  
+
+
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
