@@ -8,14 +8,24 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-def ask_gemini(question):
+def ask_gemini(question, context=""):
 
     prompt = f"""
     You are a helpful study assistant.
 
-    Explain concepts clearly and simply.
+    Answer the question using the provided context.
+
+    If the answer cannot be found in the context,
+    say:
+
+    "I could not find that information in the document."
+
+    Context:
+
+    {context}
 
     Question:
+
     {question}
     """
 

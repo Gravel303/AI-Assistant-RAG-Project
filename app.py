@@ -1,5 +1,9 @@
 import streamlit as st
 
+from utils.retriever import retrieve_chunks
+
+from utils.text_chunker import chunk_text
+
 from utils.gemini_client import ask_gemini
 
 from utils.pdf_processor import extract_text_from_pdf
@@ -22,6 +26,7 @@ if uploaded_file:
         uploaded_file
     )
 
+    chunks = chunk_text(pdf_text)
 
     st.success("PDF loaded!")
 
@@ -29,7 +34,7 @@ if uploaded_file:
     "PDF Preview",
     pdf_text[:3000],
     height=300
-)  
+    )  
 
 
 
@@ -48,6 +53,26 @@ question = st.chat_input(
 
 if question:
 
+    if uploaded_file:
+
+        relevant_chunks = retrieve_chunks(
+            question,
+            chunks
+            )
+
+        context = "\n\n".join(
+            relevant_chunks
+        )
+
+        st.text_area(
+            "Best Matching Chunk",
+            relevant_chunks[0],
+            height=250
+            )
+
+    else:
+        context = ""
+
     st.session_state.messages.append(
         {
             "role": "user",
@@ -59,7 +84,10 @@ if question:
         st.markdown(question)
 
     with st.spinner("Thinking..."):
-        answer = ask_gemini(question)
+        answer = ask_gemini(
+        question,
+        context
+        )   
 
     st.session_state.messages.append(
         {
