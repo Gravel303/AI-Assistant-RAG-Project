@@ -1,5 +1,9 @@
 import streamlit as st
 
+import os 
+
+from utils.storage_manager import (load_chunks, load_index, save_chunks, save_index)
+
 from utils.fast_semantic_retriever import fast_semantic_retrieve
 # from utils.retriever import retrieve_chunks
 
@@ -10,6 +14,10 @@ from utils.gemini_client import ask_gemini
 from utils.pdf_processor import extract_text_from_pdf
 
 from utils.embeddings import get_embedding
+
+from utils.faiss_manager import build_faiss_index
+
+from utils.faiss_retriever import faiss_retrieve
 
 st.set_page_config(
     page_title="AI Study Assistant",
@@ -42,15 +50,34 @@ question = st.chat_input(
 if "chunks" not in st.session_state:
     st.session_state.chunks = []
 
-if "chunk_embeddings" not in st.session_state:
-    st.session_state.chunk_embeddings = []
+# if "chunk_embeddings" not in st.session_state:
+#     st.session_state.chunk_embeddings = []
+
+if "faiss_index" not in st.session_state:
+    st.session_state.faiss_index = None
+
+if (
+    os.path.exists("data/chunks.pkl")
+    and
+    os.path.exists("data/faiss.index")
+    and
+    not st.session_state.chunks
+):
+
+    st.session_state.chunks = (
+        load_chunks()
+    )
+
+    st.session_state.faiss_index = (
+        load_index()
+    )
 
 if (
     uploaded_file
     and uploaded_file.name
     != st.session_state.current_pdf
 ):
-    if not st.session_state.chunk_embeddings:
+    if not st.session_state.chunks:
         pdf_text = extract_text_from_pdf(
             uploaded_file
         )
@@ -63,24 +90,56 @@ if (
             "Generating embeddings..."
         ):
 
-            for chunk in chunks:
+            # for chunk in chunks:
 
-                embedding = get_embedding(
-                    chunk
-                )
+            #     embedding = get_embedding(
+            #         chunk
+            #     )
 
-                chunk_embeddings.append(
-                    embedding
-                )
+            #     chunk_embeddings.append(
+            #         embedding
+            #     )
+            for i, chunk in enumerate(chunks):
+
+                try:
+
+                    embedding = get_embedding(
+                        chunk
+                    )
+
+                    chunk_embeddings.append(
+                       embedding
+                    )
+
+                except Exception as e:
+
+                    st.error(
+                        f"Failed at chunk "
+                         f"{i + 1}: {e}"
+                    )
+
+                    break
+
+
         st.write(
         f"Stored {len(chunk_embeddings)} embeddings"
         )
 
         st.session_state.chunks = chunks
 
-        st.session_state.chunk_embeddings = (
+        # st.session_state.chunk_embeddings = (
+        #     chunk_embeddings
+        # )
+
+        index = build_faiss_index(
             chunk_embeddings
-        )
+            )
+        
+        save_chunks(chunks)
+
+        save_index(index)
+
+        st.session_state.faiss_index = index
 
         st.session_state.current_pdf = (
             uploaded_file.name
@@ -94,7 +153,15 @@ if (
         height=300
         )  
 
+st.sidebar.write(
+    f"Loaded Chunks: {len(st.session_state.chunks)}"
+)
 
+if st.session_state.faiss_index:
+    st.sidebar.write(
+        f"Index Size: "
+        f"{st.session_state.faiss_index.ntotal}"
+    )
 
 
 
@@ -102,10 +169,12 @@ if question:
 
     if uploaded_file:
 
-        relevant_chunks = fast_semantic_retrieve(
-        question,
-        st.session_state.chunks,
-        st.session_state.chunk_embeddings
+        relevant_chunks = (
+            faiss_retrieve(
+                question,
+                st.session_state.faiss_index,
+                st.session_state.chunks
+            )
         )
 
         context = "\n\n".join(

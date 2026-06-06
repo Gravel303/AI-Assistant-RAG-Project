@@ -1,0 +1,48 @@
+import pickle
+import faiss
+
+def save_chunks(
+    chunks,
+    filepath="data/chunks.pkl"
+):
+
+    with open(
+        filepath,
+        "wb"
+    ) as file:
+
+        pickle.dump(
+            chunks,
+            file
+        )
+
+def load_chunks(
+    filepath="data/chunks.pkl"
+):
+
+    with open(
+        filepath,
+        "rb"
+    ) as file:
+
+        return pickle.load(
+            file
+        )
+
+def save_index(
+    index,
+    filepath="data/faiss.index"
+):
+
+    faiss.write_index(
+        index,
+        filepath
+    )
+
+def load_index(
+    filepath="data/faiss.index"
+):
+
+    return faiss.read_index(
+        filepath
+    )

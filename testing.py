@@ -1,12 +1,10 @@
-from google import genai
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
+from utils.storage_manager import (save_chunks, load_chunks)
 
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
+chunks = ["TCP", "UDP"]
 
-for model in client.models.list():
-    print(model.name)
+save_chunks(chunks)
+
+loaded = load_chunks()
+
+print(loaded)
