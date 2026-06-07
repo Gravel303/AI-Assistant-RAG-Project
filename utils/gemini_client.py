@@ -8,26 +8,34 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-def ask_gemini(question, context=""):
+def ask_gemini(
+    question,
+    context="",
+    chat_history=""
+):
 
     prompt = f"""
-    You are a helpful study assistant.
+        You are a helpful study assistant.
 
-    Answer the question using the provided context.
+        Answer the question using the provided context.
 
-    If the answer cannot be found in the context,
-    say:
+        If the answer cannot be found in the context,
+        say:
 
-    "I could not find that information in the document."
+        "I could not find that information in the document."
 
-    Context:
+        Conversation History:
 
-    {context}
+        {chat_history}
 
-    Question:
+        Context:
 
-    {question}
-    """
+        {context}
+
+        Current Question:
+
+        {question}
+        """
 
     try:
 

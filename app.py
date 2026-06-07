@@ -19,6 +19,10 @@ from utils.faiss_manager import build_faiss_index
 
 from utils.faiss_retriever import faiss_retrieve
 
+from utils.query_rewriter import (
+    rewrite_query
+)
+
 st.set_page_config(
     page_title="AI Study Assistant",
     page_icon="📚"
@@ -55,6 +59,10 @@ if "chunks" not in st.session_state:
 
 if "faiss_index" not in st.session_state:
     st.session_state.faiss_index = None
+
+if "retrieved_chunks" not in st.session_state:
+    st.session_state.retrieved_chunks = []
+
 
 if (
     os.path.exists("data/chunks.pkl")
@@ -169,12 +177,37 @@ if question:
 
     if uploaded_file:
 
+        chat_history = ""
+        for message in st.session_state.messages:
+
+            chat_history += (
+                f"{message['role']}: "
+                f"{message['content']}\n"
+            )
+
+        rewritten_question = rewrite_query(
+            question,
+            chat_history
+        )
+
+        st.sidebar.write(
+        "Rewritten Query:"
+        )
+
+        st.sidebar.write(
+        rewritten_question
+        )
+
         relevant_chunks = (
             faiss_retrieve(
-                question,
+                rewritten_question,
                 st.session_state.faiss_index,
                 st.session_state.chunks
             )
+        )
+
+        st.session_state.retrieved_chunks = (
+                relevant_chunks
         )
 
         context = "\n\n".join(
@@ -189,7 +222,9 @@ if question:
 
     else:
         context = ""
-
+    
+        chat_history = ""
+    
     st.session_state.messages.append(
         {
             "role": "user",
@@ -200,10 +235,13 @@ if question:
     with st.chat_message("user"):
         st.markdown(question)
 
+    
+
     with st.spinner("Thinking..."):
         answer = ask_gemini(
         question,
-        context
+        context,
+        chat_history
         )   
 
     st.session_state.messages.append(
@@ -215,3 +253,22 @@ if question:
 
     with st.chat_message("assistant"):
         st.markdown(answer)
+
+    if st.session_state.retrieved_chunks:
+
+        with st.expander(
+            "View Retrieved Sources"
+        ):
+
+            for i, chunk in enumerate(
+                st.session_state.retrieved_chunks,
+                start=1
+            ):
+
+                st.markdown(
+                    f"### Source {i}"
+                )
+
+                st.write(
+                    chunk[:1000]
+                )   
