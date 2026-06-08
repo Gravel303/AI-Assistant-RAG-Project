@@ -86,11 +86,36 @@ if (
     != st.session_state.current_pdf
 ):
     if not st.session_state.chunks:
-        pdf_text = extract_text_from_pdf(
+        pages = extract_text_from_pdf(
             uploaded_file
         )
+        # st.write(type(pages))
 
-        chunks = chunk_text(pdf_text)
+        # st.write(len(pages))
+
+        # st.write(pages[0])
+
+        # st.write(pages[0].keys())
+
+        # st.write(pages[0]["page"])
+
+        # st.write(
+        #     pages[0]["text"][:100]
+        # )
+
+
+
+        chunks = chunk_text(pages)
+
+        # st.write(type(chunks))
+
+        # st.write(type(chunks[0]))
+
+        # st.write(chunks[0])
+
+        # st.write(len(chunks))
+
+        # st.write(chunks[:2])
 
         chunk_embeddings = []
 
@@ -112,7 +137,7 @@ if (
                 try:
 
                     embedding = get_embedding(
-                        chunk
+                        chunk["text"]
                     )
 
                     chunk_embeddings.append(
@@ -155,11 +180,6 @@ if (
 
         st.success("PDF loaded!")
 
-        st.text_area(
-        "PDF Preview",
-        pdf_text[:3000],
-        height=300
-        )  
 
 st.sidebar.write(
     f"Loaded Chunks: {len(st.session_state.chunks)}"
@@ -211,14 +231,9 @@ if question:
         )
 
         context = "\n\n".join(
-            relevant_chunks
+            chunk["text"]
+            for chunk in relevant_chunks
         )
-
-        st.text_area(
-            "Best Matching Chunk",
-            relevant_chunks[0],
-            height=250
-            )
 
     else:
         context = ""
@@ -266,9 +281,10 @@ if question:
             ):
 
                 st.markdown(
-                    f"### Source {i}"
+                    f"### Source {i} "
+                    f"(Page {chunk['page']})"
                 )
 
                 st.write(
-                    chunk[:1000]
+                    chunk["text"][:1000]
                 )   
