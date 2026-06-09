@@ -23,6 +23,10 @@ from utils.query_rewriter import (
     rewrite_query
 )
 
+from utils.summary_generator import (
+    generate_summary
+)
+
 st.set_page_config(
     page_title="AI Study Assistant",
     page_icon="📚"
@@ -54,14 +58,14 @@ question = st.chat_input(
 if "chunks" not in st.session_state:
     st.session_state.chunks = []
 
-# if "chunk_embeddings" not in st.session_state:
-#     st.session_state.chunk_embeddings = []
-
 if "faiss_index" not in st.session_state:
     st.session_state.faiss_index = None
 
 if "retrieved_chunks" not in st.session_state:
     st.session_state.retrieved_chunks = []
+
+if "summary" not in st.session_state:
+    st.session_state.summary = ""
 
 
 if (
@@ -85,100 +89,74 @@ if (
     and uploaded_file.name
     != st.session_state.current_pdf
 ):
-    if not st.session_state.chunks:
+    # if not st.session_state.chunks:
         pages = extract_text_from_pdf(
             uploaded_file
         )
-        # st.write(type(pages))
-
-        # st.write(len(pages))
-
-        # st.write(pages[0])
-
-        # st.write(pages[0].keys())
-
-        # st.write(pages[0]["page"])
-
-        # st.write(
-        #     pages[0]["text"][:100]
-        # )
-
-
 
         chunks = chunk_text(pages)
+        if chunks[0] != st.session_state.chunks[0]:
+            
+            chunk_embeddings = []
 
-        # st.write(type(chunks))
+            with st.spinner(
+                "Generating embeddings..."
+            ):
 
-        # st.write(type(chunks[0]))
+                # for chunk in chunks:
 
-        # st.write(chunks[0])
+                #     embedding = get_embedding(
+                #         chunk
+                #     )
 
-        # st.write(len(chunks))
+                #     chunk_embeddings.append(
+                #         embedding
+                #     )
+                for i, chunk in enumerate(chunks):
 
-        # st.write(chunks[:2])
+                    try:
 
-        chunk_embeddings = []
+                        embedding = get_embedding(
+                            chunk["text"]
+                        )
 
-        with st.spinner(
-            "Generating embeddings..."
-        ):
+                        chunk_embeddings.append(
+                        embedding
+                        )
 
-            # for chunk in chunks:
+                    except Exception as e:
 
-            #     embedding = get_embedding(
-            #         chunk
-            #     )
+                        st.error(
+                            f"Failed at chunk "
+                            f"{i + 1}: {e}"
+                        )
 
-            #     chunk_embeddings.append(
-            #         embedding
-            #     )
-            for i, chunk in enumerate(chunks):
-
-                try:
-
-                    embedding = get_embedding(
-                        chunk["text"]
-                    )
-
-                    chunk_embeddings.append(
-                       embedding
-                    )
-
-                except Exception as e:
-
-                    st.error(
-                        f"Failed at chunk "
-                         f"{i + 1}: {e}"
-                    )
-
-                    break
+                        break
 
 
-        st.write(
-        f"Stored {len(chunk_embeddings)} embeddings"
-        )
-
-        st.session_state.chunks = chunks
-
-        # st.session_state.chunk_embeddings = (
-        #     chunk_embeddings
-        # )
-
-        index = build_faiss_index(
-            chunk_embeddings
+            st.write(
+            f"Stored {len(chunk_embeddings)} embeddings"
             )
-        
-        save_chunks(chunks)
 
-        save_index(index)
+            st.session_state.chunks = chunks
 
-        st.session_state.faiss_index = index
+            index = build_faiss_index(
+                chunk_embeddings
+                )
+            
+            save_chunks(chunks)
 
-        st.session_state.current_pdf = (
-            uploaded_file.name
-        )
+            save_index(index)
 
-        st.success("PDF loaded!")
+            st.session_state.faiss_index = index
+
+            st.session_state.current_pdf = (
+                uploaded_file.name
+            )
+
+            st.session_state.summary = ""
+
+            st.success("PDF loaded!")
 
 
 st.sidebar.write(
@@ -191,7 +169,33 @@ if st.session_state.faiss_index:
         f"{st.session_state.faiss_index.ntotal}"
     )
 
+if st.button(
+    "📄 Generate Summary"
+): 
+    if st.session_state.chunks:
+        document_text = "\n\n".join(
+        chunk["text"]
+        for chunk in st.session_state.chunks
+        )
+    with st.spinner(
+    "Generating summary..."
+    ):
 
+        st.session_state.summary = (
+            generate_summary(
+                document_text
+            )
+        )
+
+if st.session_state.summary:
+
+    st.subheader(
+        "Document Summary"
+    )
+
+    st.markdown(
+        st.session_state.summary
+    )
 
 if question:
 
