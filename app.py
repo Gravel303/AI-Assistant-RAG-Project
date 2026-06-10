@@ -27,6 +27,10 @@ from utils.summary_generator import (
     generate_summary
 )
 
+from utils.quiz_generator import (
+    generate_quiz
+)
+
 st.set_page_config(
     page_title="AI Study Assistant",
     page_icon="📚"
@@ -66,6 +70,9 @@ if "retrieved_chunks" not in st.session_state:
 
 if "summary" not in st.session_state:
     st.session_state.summary = ""
+
+if "quiz" not in st.session_state:
+    st.session_state.quiz = ""
 
 
 if (
@@ -156,6 +163,8 @@ if (
 
             st.session_state.summary = ""
 
+            st.session_state.summary = ""
+
             st.success("PDF loaded!")
 
 
@@ -169,23 +178,44 @@ if st.session_state.faiss_index:
         f"{st.session_state.faiss_index.ntotal}"
     )
 
-if st.button(
-    "📄 Generate Summary"
-): 
-    if st.session_state.chunks:
-        document_text = "\n\n".join(
-        chunk["text"]
-        for chunk in st.session_state.chunks
-        )
-    with st.spinner(
-    "Generating summary..."
-    ):
+with st.sidebar:
 
-        st.session_state.summary = (
-            generate_summary(
-                document_text
+    if st.button(
+        "📄 Generate Summary"
+    ): 
+        if st.session_state.chunks:
+            document_text = "\n\n".join(
+            chunk["text"]
+            for chunk in st.session_state.chunks
             )
+        with st.spinner(
+        "Generating summary..."
+        ):
+
+            st.session_state.summary = (
+                generate_summary(
+                    document_text
+                )
+            )
+
+    if st.button(
+        "📝 Generate Quiz"
+    ):
+        document_text = "\n\n".join(
+            chunk["text"]
+            for chunk in st.session_state.chunks
         )
+
+        with st.spinner(
+            "Generating quiz..."
+        ):
+
+            st.session_state.quiz = (
+                generate_quiz(
+                    document_text
+                )
+            )
+
 
 if st.session_state.summary:
 
@@ -195,6 +225,18 @@ if st.session_state.summary:
 
     st.markdown(
         st.session_state.summary
+    )
+
+if st.session_state.quiz:
+
+    st.subheader(
+        "Document Quiz"
+    )
+
+    st.text_area(
+    "Document Quiz",
+    st.session_state.quiz,
+    height=600
     )
 
 if question:
