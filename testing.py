@@ -1,10 +1,15 @@
 
-from utils.storage_manager import (save_chunks, load_chunks)
+from utils.flashcard_generator import (
+    generate_flashcards
+)
 
-chunks = ["TCP", "UDP"]
+sample_text = """
+TCP provides reliable communication.
+UDP is connectionless.
+"""
 
-save_chunks(chunks)
-
-loaded = load_chunks()
-
-print(loaded)
+print(
+    generate_flashcards(
+        sample_text
+    )
+)

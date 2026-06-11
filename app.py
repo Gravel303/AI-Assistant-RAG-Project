@@ -31,6 +31,8 @@ from utils.quiz_generator import (
     generate_quiz
 )
 
+from utils.flashcard_generator import generate_flashcards
+
 st.set_page_config(
     page_title="AI Study Assistant",
     page_icon="📚"
@@ -74,6 +76,8 @@ if "summary" not in st.session_state:
 if "quiz" not in st.session_state:
     st.session_state.quiz = ""
 
+if "flashcards" not in st.session_state:
+    st.session_state.flashcards = ""
 
 if (
     os.path.exists("data/chunks.pkl")
@@ -165,6 +169,8 @@ if (
 
             st.session_state.summary = ""
 
+            st.session_state.flashcards = ""
+
             st.success("PDF loaded!")
 
 
@@ -216,6 +222,24 @@ with st.sidebar:
                 )
             )
 
+    if st.button(
+        "🃏 Generate Flashcards"
+    ):
+        document_text = "\n\n".join(
+            chunk["text"]
+            for chunk in st.session_state.chunks
+        )
+
+        with st.spinner(
+            "Generating flashcards..."
+        ):
+
+            st.session_state.flashcards = (
+                generate_flashcards(
+                    document_text
+                )
+            )
+
 
 if st.session_state.summary:
 
@@ -237,6 +261,14 @@ if st.session_state.quiz:
     "Document Quiz",
     st.session_state.quiz,
     height=600
+    )
+
+if st.session_state.flashcards:
+
+    st.text_area(
+        "Document Flashcards",
+        st.session_state.flashcards,
+        height=600
     )
 
 if question:
