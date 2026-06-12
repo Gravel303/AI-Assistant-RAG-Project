@@ -4,9 +4,6 @@ import os
 
 from utils.storage_manager import (load_chunks, load_index, save_chunks, save_index)
 
-from utils.fast_semantic_retriever import fast_semantic_retrieve
-# from utils.retriever import retrieve_chunks
-
 from utils.text_chunker import chunk_text
 
 from utils.gemini_client import ask_gemini
@@ -39,14 +36,18 @@ st.set_page_config(
 )
 
 st.title("📚 AI Study Assistant")
+st.caption(
+    "Upload a PDF and study using AI chat, summaries, quizzes, and flashcards."
+)
 
 if "current_pdf" not in st.session_state:
     st.session_state.current_pdf = None
-
-uploaded_file = st.file_uploader(
-    "Upload a PDF",
-    type="pdf"
-)
+with st.sidebar:
+    uploaded_file = st.file_uploader(
+        "Upload a PDF",
+        type="pdf"
+    )
+    
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -100,12 +101,14 @@ if (
     and uploaded_file.name
     != st.session_state.current_pdf
 ):
-    # if not st.session_state.chunks:
         pages = extract_text_from_pdf(
             uploaded_file
         )
 
         chunks = chunk_text(pages)
+        st.session_state.current_pdf = (
+                uploaded_file.name
+            )
         if chunks[0] != st.session_state.chunks[0]:
             
             chunk_embeddings = []
@@ -113,16 +116,6 @@ if (
             with st.spinner(
                 "Generating embeddings..."
             ):
-
-                # for chunk in chunks:
-
-                #     embedding = get_embedding(
-                #         chunk
-                #     )
-
-                #     chunk_embeddings.append(
-                #         embedding
-                #     )
                 for i, chunk in enumerate(chunks):
 
                     try:
@@ -143,8 +136,6 @@ if (
                         )
 
                         break
-
-
             st.write(
             f"Stored {len(chunk_embeddings)} embeddings"
             )
@@ -161,10 +152,6 @@ if (
 
             st.session_state.faiss_index = index
 
-            st.session_state.current_pdf = (
-                uploaded_file.name
-            )
-
             st.session_state.summary = ""
 
             st.session_state.summary = ""
@@ -173,15 +160,9 @@ if (
 
             st.success("PDF loaded!")
 
-
-st.sidebar.write(
-    f"Loaded Chunks: {len(st.session_state.chunks)}"
-)
-
-if st.session_state.faiss_index:
-    st.sidebar.write(
-        f"Index Size: "
-        f"{st.session_state.faiss_index.ntotal}"
+if uploaded_file:
+    st.sidebar.success(
+        f"Loaded PDF:\n{st.session_state.current_pdf}"
     )
 
 with st.sidebar:
@@ -189,87 +170,103 @@ with st.sidebar:
     if st.button(
         "📄 Generate Summary"
     ): 
-        if st.session_state.chunks:
+        if st.session_state.chunks and uploaded_file:
             document_text = "\n\n".join(
             chunk["text"]
             for chunk in st.session_state.chunks
             )
-        with st.spinner(
-        "Generating summary..."
-        ):
+            with st.spinner(
+            "Generating summary..."
+            ):
 
-            st.session_state.summary = (
-                generate_summary(
-                    document_text
+                st.session_state.summary = (
+                    generate_summary(
+                        document_text
+                    )
                 )
+        else:
+            st.warning(
+                "Please upload a PDF first."
             )
 
     if st.button(
         "📝 Generate Quiz"
     ):
-        document_text = "\n\n".join(
-            chunk["text"]
-            for chunk in st.session_state.chunks
-        )
+        if st.session_state.chunks and uploaded_file:
+            document_text = "\n\n".join(
+                chunk["text"]
+                for chunk in st.session_state.chunks
+            )
 
-        with st.spinner(
-            "Generating quiz..."
-        ):
+            with st.spinner(
+                "Generating quiz..."
+            ):
 
-            st.session_state.quiz = (
-                generate_quiz(
-                    document_text
+                st.session_state.quiz = (
+                    generate_quiz(
+                        document_text
+                    )
                 )
+        else:
+            st.warning(
+                "Please upload a PDF first."
             )
 
     if st.button(
         "🃏 Generate Flashcards"
     ):
-        document_text = "\n\n".join(
-            chunk["text"]
-            for chunk in st.session_state.chunks
-        )
-
-        with st.spinner(
-            "Generating flashcards..."
-        ):
-
-            st.session_state.flashcards = (
-                generate_flashcards(
-                    document_text
-                )
+        if st.session_state.chunks and uploaded_file:
+            document_text = "\n\n".join(
+                chunk["text"]
+                for chunk in st.session_state.chunks
             )
 
+            with st.spinner(
+                "Generating flashcards..."
+            ):
+
+                st.session_state.flashcards = (
+                    generate_flashcards(
+                        document_text
+                    )
+                )
+        else:
+            st.warning(
+                "Please upload a PDF first."
+            )
 
 if st.session_state.summary:
 
-    st.subheader(
-        "Document Summary"
-    )
+    with st.expander(
+        "📄 Document Summary"
+    ):
 
-    st.markdown(
-        st.session_state.summary
-    )
+        st.markdown(
+            st.session_state.summary
+        )
 
 if st.session_state.quiz:
 
-    st.subheader(
-        "Document Quiz"
-    )
-
-    st.text_area(
-    "Document Quiz",
-    st.session_state.quiz,
-    height=600
-    )
+    with st.expander(
+        "📝 Document Quiz"
+    ):
+        st.text_area(
+        "Document Quiz",
+        st.session_state.quiz,
+        height=600
+        )
 
 if st.session_state.flashcards:
 
-    st.text_area(
-        "Document Flashcards",
-        st.session_state.flashcards,
-        height=600
-    )
+    with st.expander(
+        "🃏 Document Flashcards"
+    ):
+
+        st.text_area(
+            "Document Flashcards",
+            st.session_state.flashcards,
+            height=600
+        )
 
 if question:
 
