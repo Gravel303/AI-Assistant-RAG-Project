@@ -109,11 +109,10 @@ if (
         st.session_state.current_pdf = (
                 uploaded_file.name
             )
-        if chunks[0] != st.session_state.chunks[0]:
             
-            chunk_embeddings = []
+        chunk_embeddings = []
 
-            with st.spinner(
+        with st.spinner(
                 "Generating embeddings..."
             ):
                 for i, chunk in enumerate(chunks):
@@ -136,29 +135,29 @@ if (
                         )
 
                         break
-            st.write(
+        st.write(
             f"Stored {len(chunk_embeddings)} embeddings"
-            )
+        )
 
-            st.session_state.chunks = chunks
+        st.session_state.chunks = chunks
 
-            index = build_faiss_index(
+        index = build_faiss_index(
                 chunk_embeddings
                 )
             
-            save_chunks(chunks)
+        save_chunks(chunks)
 
-            save_index(index)
+        save_index(index)
 
-            st.session_state.faiss_index = index
+        st.session_state.faiss_index = index
 
-            st.session_state.summary = ""
+        st.session_state.summary = ""
 
-            st.session_state.summary = ""
+        st.session_state.summary = ""
 
-            st.session_state.flashcards = ""
+        st.session_state.flashcards = ""
 
-            st.success("PDF loaded!")
+        st.success("PDF loaded!")
 
 if uploaded_file:
     st.sidebar.success(
@@ -207,10 +206,7 @@ with st.sidebar:
                         document_text
                     )
                 )
-        else:
-            st.warning(
-                "Please upload a PDF first."
-            )
+
 
     if st.button(
         "🃏 Generate Flashcards"
@@ -230,10 +226,7 @@ with st.sidebar:
                         document_text
                     )
                 )
-        else:
-            st.warning(
-                "Please upload a PDF first."
-            )
+
 
 if st.session_state.summary:
 
