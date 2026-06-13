@@ -178,3 +178,7 @@ This project was built to learn and demonstrate:
 ## 📄 License
 
 This project is intended for educational and learning purposes.
+
+## Live Demo
+
+https://ai-assistant-rag-project-mbqtsgfvg9ab623mbyk9er.streamlit.app/
